@@ -1,0 +1,2 @@
+../Core/Src/hx711.c:15:6:HX711_Init	1
+../Core/Src/hx711.c:22:9:HX711_Read	5
