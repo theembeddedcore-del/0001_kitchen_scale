@@ -23,15 +23,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
-
 #include "math.h"
-
 #include "stdlib.h"
-
-#include <stdint.h>
-
-#include "hx711.h"
-
+#include <string.h>
+//#include "hx711.h"
 #include "display.h"
 
 /* USER CODE END Includes */
@@ -70,10 +65,10 @@ const osThreadAttr_t SendWeightDispl_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for Calibrate_Task */
-osThreadId_t Calibrate_TaskHandle;
-const osThreadAttr_t Calibrate_Task_attributes = {
-  .name = "Calibrate_Task",
+/* Definitions for RTC_Taks */
+osThreadId_t RTC_TaksHandle;
+const osThreadAttr_t RTC_Taks_attributes = {
+  .name = "RTC_Taks",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
@@ -84,6 +79,7 @@ const osMessageQueueAttr_t WeightDataQueue_attributes = {
 };
 /* USER CODE BEGIN PV */
 
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,7 +89,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_RTC_Init(void);
 void WeightReadTask01(void *argument);
 void SendWeightDisplay01(void *argument);
-void Calibrate_Task01(void *argument);
+void RTC_Taks01(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -101,12 +97,44 @@ void Calibrate_Task01(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int32_t offset = 0;
-float scale = 1.0f;
-float kalibriergewicht = 206.0f;
-uint8_t uart_rx_data;
-uint8_t nextion_buffer[10];
-int nextion_index = 0;
+
+
+
+
+
+// ---- RTC → Strings schicken ----
+void Send_RTC_To_Nextion(void) {
+    RTC_DateTypeDef gDate;
+    RTC_TimeTypeDef gTime;
+    char dateStr[20];
+    char timeStr[20];
+
+    HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
+
+    // Datum formatieren
+    snprintf(dateStr, sizeof(dateStr), "%02d.%02d.%04d",
+              gDate.Date, gDate.Month, 2000 + gDate.Year);
+
+    // Uhrzeit formatieren
+    snprintf(timeStr, sizeof(timeStr), "%02d:%02d:%02d",
+             gTime.Hours, gTime.Minutes, gTime.Seconds);
+
+    // An Nextion senden
+    NEXTION_SendString("t3", dateStr);
+    NEXTION_SendString("t2", timeStr);
+}
+
+//-------------------------------------------------------------------------------
+
+
+
+
+
+//-------------------------------------------------------------------------------
+
+
+
 /* USER CODE END 0 */
 
 /**
@@ -117,7 +145,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	printf("HX711 Kalibrierung\n");
+	//RTC_Set_Time_Once();
+
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -174,8 +204,8 @@ int main(void)
   /* creation of SendWeightDispl */
   SendWeightDisplHandle = osThreadNew(SendWeightDisplay01, NULL, &SendWeightDispl_attributes);
 
-  /* creation of Calibrate_Task */
-  Calibrate_TaskHandle = osThreadNew(Calibrate_Task01, NULL, &Calibrate_Task_attributes);
+  /* creation of RTC_Taks */
+  RTC_TaksHandle = osThreadNew(RTC_Taks01, NULL, &RTC_Taks_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -410,45 +440,14 @@ void WeightReadTask01(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
-	 printf("HX711 Kalibrierung\n");
-	  NEXTION_SendString("t1", "HX711 Kalibrierung\n");
-
-	  // HX711 an PA1 (DT), PA0 (SCK)
-	  HX711_Init(GPIOA, GPIO_PIN_1, GPIOA, GPIO_PIN_0);
-
-	  HAL_Delay(1000);
-
-	  // Tare
-	  offset = HX711_Read();
-	  printf("Offset (leer): %ld\r\n", offset);
-	  NEXTION_SendString("t1", "Offset (leer)\n");
-
-	  printf("Lege jetzt 206g (iphone 14 pro) auf...\r\n");
-	  NEXTION_SendString("t1", "Lege jetzt 206g (iphone 14 pro) auf...\r\n");
-	  HAL_Delay(5000);
-
-	  int32_t raw_with_weight = HX711_Read();
-	  printf("Raw mit 206g: %ld\r\n", raw_with_weight);
-	  NEXTION_SendString("t1", "Raw mit 206g:");
 
 
-	  scale = (float)(raw_with_weight - offset) / kalibriergewicht;
-	  printf("Skalierung: %.4f\r\n", scale);
+	for (;;)
+	{
+		NEXTION_SendString("t1", "test t1");
+		osDelay(1);
+	}
 
-	  printf("Live-Gewicht:\r\n");
-
-
-	for(;;)
-  {
-	  int32_t raw = HX711_Read();
-	  float gewicht = (raw - offset) / scale;
-
-	  printf("Gewicht: %.2f g\r\n", gewicht);
-	  NEXTION_SendFloat("x0", gewicht, 2);
-	  osMessageQueuePut(WeightDataQueueHandle, &gewicht, 0, 0); // Kein Timeout
-	  osDelay(200); // alle 1 Sekunde
-	  printf("Hello");
-  }
   /* USER CODE END 5 */
 }
 
@@ -463,47 +462,47 @@ void SendWeightDisplay01(void *argument)
 {
   /* USER CODE BEGIN SendWeightDisplay01 */
 	/* Infinite loop */
-	float receivedValue;
 
-	for (;;) {
+	    for (;;)
+	    {
+	    	//NEXTION_SendString("t0", "test t0");
+	    	osDelay(1);
+	    }
 
-		if (osMessageQueueGet(WeightDataQueueHandle, &receivedValue, NULL,
-		osWaitForever) == osOK)
-		{
-			printf("Gewicht: %.2f g\r\n", receivedValue);
-			NEXTION_SendString("t1", "Start");
-			osDelay(20);
-			NEXTION_SendFloat("x0", receivedValue, 2);
-		}
-		osDelay(20);
-	}
   /* USER CODE END SendWeightDisplay01 */
 }
 
-/* USER CODE BEGIN Header_Calibrate_Task01 */
+/* USER CODE BEGIN Header_RTC_Taks01 */
 /**
-* @brief Function implementing the Calibrate_Task thread.
+* @brief Function implementing the RTC_Taks thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Calibrate_Task01 */
-void Calibrate_Task01(void *argument)
+/* USER CODE END Header_RTC_Taks01 */
+void RTC_Taks01(void *argument)
 {
-  /* USER CODE BEGIN Calibrate_Task01 */
+  /* USER CODE BEGIN RTC_Taks01 */
   /* Infinite loop */
-	char cmd[16];
-	    for (;;) {
-	        HAL_UART_Receive(&huart2, (uint8_t*)cmd, sizeof(cmd), HAL_MAX_DELAY);
-	        if (strncmp(cmd, "Leergewicht", 4) == 0) {
-	            HX711_Tare();
-	            NEXTION_SendString("t1", "Leergewicht OK\n");
-	        }
-	        else if (strncmp(cmd, "calib", 5) == 0) {
-	            HX711_Calibrate(kalibriergewicht);
-	            NEXTION_SendString("t1", "Calib OK\n");
-	        }
-	    }
-  /* USER CODE END Calibrate_Task01 */
+	  RTC_TimeTypeDef sTime = {0};
+	  RTC_DateTypeDef sDate = {0};
+
+	  sTime.Hours = 22;
+	  sTime.Minutes = 53;
+	  sTime.Seconds = 0;
+	  HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+
+	  sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
+	  sDate.Month = 9;
+	  sDate.Date = 12;
+	  sDate.Year = 25;   // Jahr = 2025
+	  HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+	for(;;)
+  {
+	  Send_RTC_To_Nextion();
+	  osDelay(1);
+  }
+  /* USER CODE END RTC_Taks01 */
 }
 
 /**

@@ -1,2 +1,5 @@
-../Core/Src/hx711.c:15:6:HX711_Init	1
-../Core/Src/hx711.c:22:9:HX711_Read	5
+../Core/Src/hx711.c:18:6:HX711_Init	1
+../Core/Src/hx711.c:26:9:HX711_Read	5
+../Core/Src/hx711.c:47:7:HX711_Read_Average	2
+../Core/Src/hx711.c:57:6:HX711_Tare	1
+../Core/Src/hx711.c:62:6:HX711_Calibrate	2

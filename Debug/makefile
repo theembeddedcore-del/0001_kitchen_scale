@@ -64,8 +64,8 @@ all: main-build
 main-build: 004_kitchen_scale_RTOS.elf secondary-outputs
 
 # Tool invocations
-004_kitchen_scale_RTOS.elf 004_kitchen_scale_RTOS.map: $(OBJS) $(USER_OBJS) C:\Users\Florian\STM32CubeIDE\workspace_1.16.0\004_kitchen_scale\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "004_kitchen_scale_RTOS.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Florian\STM32CubeIDE\workspace_1.16.0\004_kitchen_scale\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="004_kitchen_scale_RTOS.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+004_kitchen_scale_RTOS.elf 004_kitchen_scale_RTOS.map: $(OBJS) $(USER_OBJS) C:\Users\Florian\git\0001_kitchen_scale\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "004_kitchen_scale_RTOS.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Florian\git\0001_kitchen_scale\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="004_kitchen_scale_RTOS.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
